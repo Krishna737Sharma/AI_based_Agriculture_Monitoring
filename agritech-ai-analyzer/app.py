@@ -124,7 +124,7 @@ def verify_model_files():
         "nutrient_model.keras",
         "nutrient_class_names.npy",
         "disease_class_names.txt",
-        "class_names.txt",
+        "class_names.txt"
         # List all required files
     ]
     
