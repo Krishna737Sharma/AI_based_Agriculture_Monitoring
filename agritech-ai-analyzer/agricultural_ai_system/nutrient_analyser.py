@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 class NutrientAnalyzer:
     _instance = None
     
-    def __init__(self, model_path: str = "/workspaces/AI-Based-Crop-Monitoring-/agritech-ai-analyzer/models/nutrient_model.keras", 
-                 class_names_path: str = "/workspaces/AI-Based-Crop-Monitoring-/agritech-ai-analyzer/models/nutrient_class_names.npy"):
+    def __init__(self, model_path: str = "agritech-ai-analyzer/models/nutrient_model.keras", 
+                 class_names_path: str = "agritech-ai-analyzer/models/nutrient_class_names.npy"):
         self.model = None
         self.class_names = []
         self.image_size = (256, 256)
