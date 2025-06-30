@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import gdown
 from PIL import Image
 from agricultural_ai_system.crop_monitor import get_crop_monitor
 from agricultural_ai_system.disease_detector import get_disease_detector
@@ -71,6 +72,21 @@ def load_analyzers():
         "weed": get_weed_detector()
     }
     return {k: v for k, v in analyzers.items() if v is not None}
+
+def download_models():
+    # Create models directory if missing
+    os.makedirs("models", exist_ok=True)
+
+    # Download models from Google Drive
+    model_urls = {
+        "crop_classifier.pth": "https://drive.google.com/uc?id=FILE_ID",
+        "disease_model.weights.h5": "https://drive.google.com/uc?id=FILE_ID",
+        # Add all model files here
+    }
+
+    for filename, url in model_urls.items():
+        if not os.path.exists(f"models/{filename}"):
+            gdown.download(url, f"models/{filename}", quiet=False)
 
 def main():
     st.title("🌱 AgriTech AI Analyzer")
@@ -240,4 +256,5 @@ def display_results(result, analysis_type):
         else:
             st.info("No visualization available for this analysis")
 if __name__ == "__main__":
+    download_models()
     main()
