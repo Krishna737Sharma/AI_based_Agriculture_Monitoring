@@ -25,16 +25,25 @@ class CropMonitor:
         self.transform = self._get_val_transform()
         
         if model_path:
+            # Convert to absolute path for reliability
+            model_path = os.path.abspath(model_path)
             self.load_model(model_path)
+            
+            # Load class names from same directory as model
             if not self.class_names:
-                self._load_class_names(os.path.dirname(model_path))
+                model_dir = os.path.dirname(model_path)
+                class_file = os.path.join(model_dir, "class_names.txt")
+                self._load_class_names(class_file)
 
     @classmethod
     @st.cache_resource
     def get_instance(cls, model_path: str = "models/crop_classifier.pth"):
         if cls._instance is None:
+            # Ensure the models directory exists
+            os.makedirs(os.path.dirname(model_path), exist_ok=True)
+            
             cls._instance = cls(model_path=model_path)
-            logger.info("Initialized new CropMonitor instance")
+            logger.info(f"Initialized new CropMonitor instance with model at {model_path}")
         return cls._instance
 
     def load_model(self, model_path: str) -> None:
