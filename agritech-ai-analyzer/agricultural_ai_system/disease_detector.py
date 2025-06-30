@@ -17,9 +17,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Paths relative to the project root
-DEFAULT_MODEL_PATH = "agritech-ai-analyzer/models/plant_disease_model.keras"
-DEFAULT_WEIGHTS_PATH = "agritech-ai-analyzer/models/plant_disease_model.weights.h5"
-DEFAULT_CLASS_NAMES_PATH = "agritech-ai-analyzer/models/disease_class_names.txt"
+DEFAULT_MODEL_PATH = "models/plant_disease_model.keras"
+DEFAULT_WEIGHTS_PATH = "models/plant_disease_model.weights.h5"
+DEFAULT_CLASS_NAMES_PATH = "models/disease_class_names.txt"
 
 class DiseaseDetector:
     _instance = None
