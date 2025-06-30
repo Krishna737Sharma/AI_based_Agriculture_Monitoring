@@ -109,38 +109,6 @@ def download_models():
                 if os.path.exists(output_path):
                     os.remove(output_path)
                     
-def verify_model_files():
-    required_files = [
-        "crop_classifier.pth",
-        "plant_disease_model.weights.h5",
-        "yolov8x-seg.pt",
-        "soil_scaler.pkl",
-        "soil_label_encoder.pkl",
-        "soil_classifier_rf.pkl",
-        "soil_classifier_cnn.h5",
-        "plant_disease_model.keras",
-        "pest_detection_model.keras",
-        "pest_class_names.npy",
-        "nutrient_model.keras",
-        "nutrient_class_names.npy",
-        "disease_class_names.txt",
-        "class_names.txt"
-        # List all required files
-    ]
-    
-    missing_files = []
-    corrupted_files = []
-    
-    for file in required_files:
-        path = f"models/{file}"
-        if not os.path.exists(path):
-            missing_files.append(file)
-        elif os.path.getsize(path) < 1024:  # Files smaller than 1KB are likely corrupted
-            corrupted_files.append(file)
-    
-    return missing_files, corrupted_files
-
-
 def main():
     st.title("🌱 AgriTech AI Analyzer")
     st.markdown("Upload an agricultural image for comprehensive analysis")
@@ -310,12 +278,4 @@ def display_results(result, analysis_type):
             st.info("No visualization available for this analysis")
 if __name__ == "__main__":
     download_models()
-    missing, corrupted = verify_model_files()
-    
-    if missing:
-        st.error(f"Missing model files: {', '.join(missing)}")
-    if corrupted:
-        st.error(f"Corrupted model files: {', '.join(corrupted)}")
-    
-    if not missing and not corrupted:
-        main()
+    main()
