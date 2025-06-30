@@ -31,7 +31,7 @@ class CropMonitor:
 
     @classmethod
     @st.cache_resource
-    def get_instance(cls, model_path: str = "agritech-ai-analyzer/models/crop_classifier.pth"):
+    def get_instance(cls, model_path: str = "models/crop_classifier.pth"):
         if cls._instance is None:
             cls._instance = cls(model_path=model_path)
             logger.info("Initialized new CropMonitor instance")
