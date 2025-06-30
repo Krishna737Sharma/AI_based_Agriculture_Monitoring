@@ -12,8 +12,8 @@ import streamlit as st
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL_PATH = "agritech-ai-analyzer/models/pest_detection_model.keras"
-DEFAULT_CLASS_NAMES_PATH = "agritech-ai-analyzer/models/pest_class_names.npy"
+DEFAULT_MODEL_PATH = "models/pest_detection_model.keras"
+DEFAULT_CLASS_NAMES_PATH = "models/pest_class_names.npy"
 
 class PestDetector:
     _instance = None
