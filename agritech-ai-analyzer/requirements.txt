@@ -11,3 +11,4 @@ matplotlib
 scikit-learn
 joblib
 tensorflow==2.12.0
+seaborn>=0.12.2
