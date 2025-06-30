@@ -1,15 +1,15 @@
 streamlit==1.29.0
 gdown==5.2.0
---extra-index-url https://download.pytorch.org/whl/nightly/cu121
-torch==2.3.0.dev20240513  # Nightly build for Python 3.13
-torchvision==0.18.0.dev20240513
-tensorflow==2.16.1
-keras==3.0.1
-ultralytics==8.1.0
-opencv-python-headless==4.9.0.80
-pillow==10.2.0
-numpy==1.26.4
-pandas==2.1.3
-matplotlib==3.8.2
-scikit-learn==1.3.2
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.0.1+cu118
+torchvision==0.15.2+cu118
+tensorflow==2.12.0
+keras==2.12.0
+ultralytics==8.0.124
+opencv-python-headless==4.7.0.72
+pillow==9.5.0
+numpy==1.24.4
+pandas==1.5.3
+matplotlib==3.7.1
+scikit-learn==1.2.2
 joblib==1.2.0
