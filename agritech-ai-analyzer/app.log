@@ -1,0 +1,87 @@
+INFO:__main__:Streamlit app started
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing crop analysis
+INFO:agricultural_ai_system.crop_monitor:Crop monitor accessor initialized
+ERROR:agricultural_ai_system.crop_monitor:Error loading model: 'model_state_dict'
+ERROR:__main__:Error during analysis: 'model_state_dict'
+INFO:root:Memory report: {'used_mb': 2226.08984375, 'available_mb': 5334.73046875, 'percent_used': 32.8}
+INFO:root:Memory report: {'used_mb': 2226.08984375, 'available_mb': 5334.73046875, 'percent_used': 32.8}
+INFO:__main__:Memory after error: {'used_mb': 2226.08984375, 'available_mb': 5334.73046875, 'percent_used': 32.8}
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing disease analysis
+ERROR:agricultural_ai_system.disease_detector:Error loading model: File not found: filepath=models/disease_detection_model.keras. Please ensure the file is an accessible `.keras` zip file.
+ERROR:__main__:Error during analysis: File not found: filepath=models/disease_detection_model.keras. Please ensure the file is an accessible `.keras` zip file.
+INFO:root:Memory report: {'used_mb': 2230.8671875, 'available_mb': 5329.953125, 'percent_used': 32.9}
+INFO:root:Memory report: {'used_mb': 2230.8671875, 'available_mb': 5329.953125, 'percent_used': 32.9}
+INFO:__main__:Memory after error: {'used_mb': 2230.8671875, 'available_mb': 5329.953125, 'percent_used': 32.9}
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing nutrient analysis
+ERROR:agricultural_ai_system.nutrient_analyser:Error loading model: File not found: filepath=models/nutrient_detection_model.keras. Please ensure the file is an accessible `.keras` zip file.
+ERROR:__main__:Error during analysis: File not found: filepath=models/nutrient_detection_model.keras. Please ensure the file is an accessible `.keras` zip file.
+INFO:root:Memory report: {'used_mb': 2252.46875, 'available_mb': 5308.3515625, 'percent_used': 33.1}
+INFO:root:Memory report: {'used_mb': 2252.46875, 'available_mb': 5308.3515625, 'percent_used': 33.1}
+INFO:__main__:Memory after error: {'used_mb': 2252.46875, 'available_mb': 5308.3515625, 'percent_used': 33.1}
+INFO:__main__:Streamlit app started
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing crop analysis
+INFO:agricultural_ai_system.crop_monitor:Crop monitor accessor initialized
+ERROR:agricultural_ai_system.crop_monitor:Error loading model: Error(s) in loading state_dict for EfficientNet:
+	size mismatch for classifier.1.weight: copying a param with shape torch.Size([30, 1792]) from checkpoint, the shape in current model is torch.Size([1000, 1792]).
+	size mismatch for classifier.1.bias: copying a param with shape torch.Size([30]) from checkpoint, the shape in current model is torch.Size([1000]).
+ERROR:__main__:Error during analysis: Error(s) in loading state_dict for EfficientNet:
+	size mismatch for classifier.1.weight: copying a param with shape torch.Size([30, 1792]) from checkpoint, the shape in current model is torch.Size([1000, 1792]).
+	size mismatch for classifier.1.bias: copying a param with shape torch.Size([30]) from checkpoint, the shape in current model is torch.Size([1000]).
+INFO:root:Memory report: {'used_mb': 2178.98046875, 'available_mb': 5381.69140625, 'percent_used': 32.2}
+INFO:root:Memory report: {'used_mb': 2178.98046875, 'available_mb': 5381.69140625, 'percent_used': 32.2}
+INFO:__main__:Memory after error: {'used_mb': 2178.98046875, 'available_mb': 5381.69140625, 'percent_used': 32.2}
+INFO:__main__:Streamlit app started
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing crop analysis
+INFO:agricultural_ai_system.crop_monitor:Crop monitor accessor initialized
+WARNING:agricultural_ai_system.crop_monitor:Checkpoint does not contain 'model_state_dict'. Loading directly.
+ERROR:agricultural_ai_system.crop_monitor:Error loading model: Error(s) in loading state_dict for EfficientNet:
+	size mismatch for classifier.1.weight: copying a param with shape torch.Size([30, 1792]) from checkpoint, the shape in current model is torch.Size([1000, 1792]).
+	size mismatch for classifier.1.bias: copying a param with shape torch.Size([30]) from checkpoint, the shape in current model is torch.Size([1000]).
+ERROR:__main__:Error during analysis: Error(s) in loading state_dict for EfficientNet:
+	size mismatch for classifier.1.weight: copying a param with shape torch.Size([30, 1792]) from checkpoint, the shape in current model is torch.Size([1000, 1792]).
+	size mismatch for classifier.1.bias: copying a param with shape torch.Size([30]) from checkpoint, the shape in current model is torch.Size([1000]).
+INFO:root:Memory report: {'used_mb': 2185.328125, 'available_mb': 5375.01953125, 'percent_used': 32.3}
+INFO:root:Memory report: {'used_mb': 2185.328125, 'available_mb': 5375.01953125, 'percent_used': 32.3}
+INFO:__main__:Memory after error: {'used_mb': 2185.328125, 'available_mb': 5375.01953125, 'percent_used': 32.3}
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing disease analysis
+WARNING:agricultural_ai_system.disease_detector:Fallback to .h5 model: models/disease_detection_model.h5
+ERROR:agricultural_ai_system.disease_detector:Error loading model: Model file not found: models/disease_detection_model.h5
+ERROR:__main__:Error during analysis: Model file not found: models/disease_detection_model.h5
+INFO:root:Memory report: {'used_mb': 2182.4765625, 'available_mb': 5377.875, 'percent_used': 32.3}
+INFO:root:Memory report: {'used_mb': 2182.4765625, 'available_mb': 5377.875, 'percent_used': 32.3}
+INFO:__main__:Memory after error: {'used_mb': 2182.4765625, 'available_mb': 5377.875, 'percent_used': 32.3}
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing nutrient analysis
+WARNING:agricultural_ai_system.nutrient_analyser:Fallback to .h5 model: models/nutrient_detection_model.h5
+ERROR:agricultural_ai_system.nutrient_analyser:Error loading model: Model file not found: models/nutrient_detection_model.h5
+ERROR:__main__:Error during analysis: Model file not found: models/nutrient_detection_model.h5
+INFO:root:Memory report: {'used_mb': 2193.87890625, 'available_mb': 5366.47265625, 'percent_used': 32.4}
+INFO:root:Memory report: {'used_mb': 2193.87890625, 'available_mb': 5366.47265625, 'percent_used': 32.4}
+INFO:__main__:Memory after error: {'used_mb': 2193.87890625, 'available_mb': 5366.47265625, 'percent_used': 32.4}
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing pest analysis
+INFO:agricultural_ai_system.pest_detector:Successfully loaded model from models/pest_detection_model.keras
+ERROR:agricultural_ai_system.pest_detector:Error loading model: [Errno 2] No such file or directory: 'models/pest_classes.npy'
+ERROR:__main__:Error during analysis: [Errno 2] No such file or directory: 'models/pest_classes.npy'
+INFO:root:Memory report: {'used_mb': 2480.91015625, 'available_mb': 5079.44140625, 'percent_used': 36.0}
+INFO:root:Memory report: {'used_mb': 2480.91015625, 'available_mb': 5079.44140625, 'percent_used': 36.0}
+INFO:__main__:Memory after error: {'used_mb': 2480.91015625, 'available_mb': 5079.44140625, 'percent_used': 36.0}
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing soil analysis
+ERROR:agricultural_ai_system.soil_monitor:Error loading model: [Errno 2] No such file or directory: 'models/soil_classifier.pkl'
+ERROR:__main__:Error during analysis: [Errno 2] No such file or directory: 'models/soil_classifier.pkl'
+INFO:root:Memory report: {'used_mb': 2177.16015625, 'available_mb': 5383.19140625, 'percent_used': 32.2}
+INFO:root:Memory report: {'used_mb': 2177.16015625, 'available_mb': 5383.19140625, 'percent_used': 32.2}
+INFO:__main__:Memory after error: {'used_mb': 2177.16015625, 'available_mb': 5383.19140625, 'percent_used': 32.2}
+INFO:__main__:Streamlit app started
+INFO:__main__:Processing weed analysis
+ERROR:__main__:Error during analysis: name 'torch' is not defined
+INFO:root:Memory report: {'used_mb': 2177.26953125, 'available_mb': 5383.08203125, 'percent_used': 32.2}
+INFO:root:Memory report: {'used_mb': 2177.26953125, 'available_mb': 5383.08203125, 'percent_used': 32.2}
+INFO:__main__:Memory after error: {'used_mb': 2177.26953125, 'available_mb': 5383.08203125, 'percent_used': 32.2}
