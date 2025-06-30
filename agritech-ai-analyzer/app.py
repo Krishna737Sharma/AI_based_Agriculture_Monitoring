@@ -88,9 +88,6 @@ def download_models():
         "pest_detection_model.keras": "https://drive.google.com/uc?id=1HW7JZQRh3ssfVRhZq_s-JQAZOMLjSAVB",
         "pest_class_names.npy": "https://drive.google.com/uc?id=1cqjAaSLCcaqPPrv_X3pX6xIcRnXmJTrd",
         "nutrient_model.keras": "https://drive.google.com/uc?id=1OUTCmm2_RlqgB0v4lHMGI3aoixhoR0Pt",
-        "nutrient_class_names.npy": "https://drive.google.com/uc?id=1lAuOSck1iqU0XA5372V5AMG1bnuasDjz",
-        "disease_class_names.txt": "https://drive.google.com/uc?id=1426wpNbUixwZvL3zk7VF1J7tX9qLW5u_",
-        "class_names.txt": "https://drive.google.com/uc?id=1r4BfsJzcm0Xc5Do6V1EUz7LJA88cKw0k"
     }
 
     for filename, url in model_urls.items():
