@@ -74,31 +74,67 @@ def load_analyzers():
     return {k: v for k, v in analyzers.items() if v is not None}
 
 def download_models():
-    # Create models directory if missing
     os.makedirs("models", exist_ok=True)
-
-    # Download models from Google Drive
+    
     model_urls = {
         "crop_classifier.pth": "https://drive.google.com/file/d/1uN3mKO5QpMf6Lwqfy65d8GhkD6OPZcfh/view?usp=drive_link",
         "plant_disease_model.weights.h5": "https://drive.google.com/file/d/1pS8COvQ_6S8QGk1aojolRQNZ68iLcz4M/view?usp=drive_link",
-        "yolov8x-seg.pt":"https://drive.google.com/file/d/1_Xku-efANU3yT9oMbA9J_gnOKlG6zz1S/view?usp=drive_link",
-        "soil_scaler.pkl":"https://drive.google.com/file/d/1X0dEHvZtXbPRRj1qyTNOmAx61AbFc1gN/view?usp=drive_link",
-        "soil_label_encoder.pkl":"https://drive.google.com/file/d/1uBWep6TKSKfzZz_-weivsMr0SbGz5ZTi/view?usp=drive_link",
-        "soil_classifier_rf.pkl":"https://drive.google.com/file/d/1iIw_xSSOERp5gG2dAoQizkoA7GbdcT4E/view?usp=drive_link",
-        "soil_classifier_cnn.h5":"https://drive.google.com/file/d/1eyI5GnpWEY6WQqDGySy4iFS5hE6_8yRd/view?usp=drive_link",
-        "plant_disease_model.keras":"https://drive.google.com/file/d/14Tt26X3R7Rdo0jyD6wmXHnhfaH2CCBgh/view?usp=drive_link",
-        "pest_detection_model.keras":"https://drive.google.com/file/d/1HW7JZQRh3ssfVRhZq_s-JQAZOMLjSAVB/view?usp=drive_link",
-        "pest_class_names.npy":"https://drive.google.com/file/d/1cqjAaSLCcaqPPrv_X3pX6xIcRnXmJTrd/view?usp=drive_link",
-        "nutrient_model.keras":"https://drive.google.com/file/d/1OUTCmm2_RlqgB0v4lHMGI3aoixhoR0Pt/view?usp=drive_link",
-        "nutrient_class_names.npy":"https://drive.google.com/file/d/1lAuOSck1iqU0XA5372V5AMG1bnuasDjz/view?usp=drive_link",
-        "disease_class_names.txt":"https://drive.google.com/file/d/1426wpNbUixwZvL3zk7VF1J7tX9qLW5u_/view?usp=drive_link",
-        "class_names.txt":"https://drive.google.com/file/d/1r4BfsJzcm0Xc5Do6V1EUz7LJA88cKw0k/view?usp=drive_link"
-        # Add all model files here
+        "yolov8x-seg.pt": "https://drive.google.com/file/d/1_Xku-efANU3yT9oMbA9J_gnOKlG6zz1S/view?usp=drive_link",
+        "soil_scaler.pkl": "https://drive.google.com/file/d/1X0dEHvZtXbPRRj1qyTNOmAx61AbFc1gN/view?usp=drive_link",
+        "soil_label_encoder.pkl": "https://drive.google.com/file/d/1uBWep6TKSKfzZz_-weivsMr0SbGz5ZTi/view?usp=drive_link",
+        "soil_classifier_rf.pkl": "https://drive.google.com/file/d/1iIw_xSSOERp5gG2dAoQizkoA7GbdcT4E/view?usp=drive_link",
+        "soil_classifier_cnn.h5": "https://drive.google.com/file/d/1eyI5GnpWEY6WQqDGySy4iFS5hE6_8yRd/view?usp=drive_link",
+        "plant_disease_model.keras": "https://drive.google.com/file/d/14Tt26X3R7Rdo0jyD6wmXHnhfaH2CCBgh/view?usp=drive_link",
+        "pest_detection_model.keras": "https://drive.google.com/file/d/1HW7JZQRh3ssfVRhZq_s-JQAZOMLjSAVB/view?usp=drive_link",
+        "pest_class_names.npy": "https://drive.google.com/file/d/1cqjAaSLCcaqPPrv_X3pX6xIcRnXmJTrd/view?usp=drive_link",
+        "nutrient_model.keras": "https://drive.google.com/file/d/1OUTCmm2_RlqgB0v4lHMGI3aoixhoR0Pt/view?usp=drive_link",
+        "nutrient_class_names.npy": "https://drive.google.com/file/d/1lAuOSck1iqU0XA5372V5AMG1bnuasDjz/view?usp=drive_link",
+        "disease_class_names.txt": "https://drive.google.com/file/d/1426wpNbUixwZvL3zk7VF1J7tX9qLW5u_/view?usp=drive_link",
+        "class_names.txt": "https://drive.google.com/file/d/1r4BfsJzcm0Xc5Do6V1EUz7LJA88cKw0k/view?usp=drive_link",
+        # Your updated URLs here
     }
 
     for filename, url in model_urls.items():
-        if not os.path.exists(f"models/{filename}"):
-            gdown.download(url, f"models/{filename}", quiet=False)
+        output_path = f"models/{filename}"
+        if not os.path.exists(output_path):
+            try:
+                gdown.download(url, output_path, quiet=False)
+                st.toast(f"Downloaded {filename} successfully")
+            except Exception as e:
+                st.error(f"Failed to download {filename}: {str(e)}")
+                continue
+
+def verify_model_files():
+    required_files = [
+        "crop_classifier.pth",
+        "plant_disease_model.weights.h5",
+        "yolov8x-seg.pt",
+        "soil_scaler.pkl",
+        "soil_label_encoder.pkl",
+        "soil_classifier_rf.pkl",
+        "soil_classifier_cnn.h5",
+        "plant_disease_model.keras",
+        "pest_detection_model.keras",
+        "pest_class_names.npy",
+        "nutrient_model.keras",
+        "nutrient_class_names.npy",
+        "disease_class_names.txt",
+        "class_names.txt",
+        # List all required files
+    ]
+    
+    missing_files = []
+    corrupted_files = []
+    
+    for file in required_files:
+        path = f"models/{file}"
+        if not os.path.exists(path):
+            missing_files.append(file)
+        elif os.path.getsize(path) < 1024:  # Files smaller than 1KB are likely corrupted
+            corrupted_files.append(file)
+    
+    return missing_files, corrupted_files
+
 
 def main():
     st.title("🌱 AgriTech AI Analyzer")
@@ -269,4 +305,12 @@ def display_results(result, analysis_type):
             st.info("No visualization available for this analysis")
 if __name__ == "__main__":
     download_models()
-    main()
+    missing, corrupted = verify_model_files()
+    
+    if missing:
+        st.error(f"Missing model files: {', '.join(missing)}")
+    if corrupted:
+        st.error(f"Corrupted model files: {', '.join(corrupted)}")
+    
+    if not missing and not corrupted:
+        main()
