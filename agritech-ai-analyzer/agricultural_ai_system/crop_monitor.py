@@ -57,7 +57,7 @@ class CropMonitor:
             raise ValueError(f"Could not load model: {str(e)}")
 
     def _load_class_names(self, model_dir: str) -> None:
-        class_file ="/workspaces/AI_based_Agriculture_Monitoring/agritech-ai-analyzer/classes/class_names.txt"
+        class_file ="agritech-ai-analyzer/classes/class_names.txt"
         if os.path.exists(class_file):
             with open(class_file, 'r') as f:
                 self.class_names = [line.strip() for line in f.readlines()]
