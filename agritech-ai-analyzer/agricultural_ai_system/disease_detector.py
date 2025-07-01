@@ -3,8 +3,8 @@ import logging
 import numpy as np
 from PIL import Image
 import tensorflow as tf
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Input, GlobalAveragePooling2D, Dense
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense
 from tensorflow.keras.applications import ResNet50V2
 from typing import Dict, List, Any
 import matplotlib.pyplot as plt
@@ -25,9 +25,9 @@ class DiseaseDetector:
     _instance = None
     
     def __init__(self, 
-                model_path: str = DEFAULT_MODEL_PATH,
-                weights_path: str = DEFAULT_WEIGHTS_PATH,
-                class_names_path: str = DEFAULT_CLASS_NAMES_PATH):
+                 model_path: str = DEFAULT_MODEL_PATH,
+                 weights_path: str = DEFAULT_WEIGHTS_PATH,
+                 class_names_path: str = DEFAULT_CLASS_NAMES_PATH):
         """Initialize the disease detector"""
         self.model = None
         self.class_names = []
@@ -64,48 +64,28 @@ class DiseaseDetector:
         return cls._instance
 
     def _load_model_with_fallbacks(self, model_path: str, weights_path: str) -> tf.keras.Model:
-        """Try multiple strategies to load the model"""
-        # Strategy 1: Try loading weights directly
-        if os.path.exists(weights_path):
-            try:
-                return self._load_from_weights(weights_path)
-            except Exception as e:
-                logger.warning(f"Failed to load from weights: {str(e)}")
-
-        # Strategy 2: Try loading full model
+        """Try multiple strategies to load the model."""
+        # Strategy 1: Try loading full model
         if os.path.exists(model_path):
             try:
+                logger.info(f"Attempting to load full model from {model_path}")
                 return self._load_full_model(model_path)
             except Exception as e:
-                logger.warning(f"Failed to load full model: {str(e)}")
+                logger.warning(f"Failed to load full model from {model_path}: {str(e)}")
 
-        # Strategy 3: Rebuild model architecture
-        try:
-            return self._rebuild_model(weights_path if os.path.exists(weights_path) else model_path)
-        except Exception as e:
-            logger.error(f"All loading strategies failed: {str(e)}")
-            raise ValueError(f"Could not load Keras model: {str(e)}")
+        # Strategy 2: Try rebuilding model and loading weights
+        if os.path.exists(weights_path):
+            try:
+                logger.info(f"Attempting to rebuild model and load weights from {weights_path}")
+                return self._rebuild_model(weights_path)
+            except Exception as e:
+                logger.warning(f"Failed to rebuild model with weights from {weights_path}: {str(e)}")
 
-    def _load_from_weights(self, weights_path: str) -> tf.keras.Model:
-        """Load model by rebuilding architecture and loading weights"""
-        logger.info("Loading model from weights")
-        
-        # Properly formatted Sequential model construction
-        model = Sequential([
-            Input(shape=(224, 224, 3)),  # Note the double closing parentheses
-            ResNet50V2(weights=None, include_top=False),
-            GlobalAveragePooling2D(),
-            Dense(128, activation='relu'),
-            Dense(len(self.class_names), activation='softmax')
-        ])
-        model.load_weights(weights_path)
-        return model
-        model.load_weights(weights_path)
-        return model
+        raise ValueError(f"All loading strategies failed. Checked paths: {model_path}, {weights_path}")
 
     def _load_full_model(self, model_path: str) -> tf.keras.Model:
-        """Load complete model file"""
-        logger.info("Loading full model")
+        """Load complete model file."""
+        logger.info(f"Loading full model from {model_path}")
         custom_objects = {
             'ResNet50V2': ResNet50V2,
             'Functional': Model
@@ -116,9 +96,9 @@ class DiseaseDetector:
             compile=False
         )
 
-    def _rebuild_model(self, file_path: str) -> tf.keras.Model:
-        """Rebuild model architecture and load weights"""
-        logger.info("Rebuilding model architecture")
+    def _rebuild_model(self, weights_path: str) -> tf.keras.Model:
+        """Rebuild model architecture and load weights."""
+        logger.info(f"Rebuilding model architecture and loading weights from {weights_path}")
         base_model = ResNet50V2(
             weights=None,
             include_top=False,
@@ -131,9 +111,7 @@ class DiseaseDetector:
         predictions = Dense(len(self.class_names), activation='softmax')(x)
         
         model = Model(inputs=base_model.input, outputs=predictions)
-        
-        # Try loading weights (works for both .h5 and .keras files)
-        model.load_weights(file_path)
+        model.load_weights(weights_path)
         return model
 
     def load_class_names(self, class_names_path: str) -> None:
@@ -208,7 +186,7 @@ class DiseaseDetector:
             
         try:
             # Convert bytes to image
-            image = Image.open(BytesIO(image_bytes)).convert('RGB')
+            image = Image.open(BytesIO(image_bytes MAGNET, image_bytes)).convert('RGB')
             img_array = self.preprocess_image(image)
             
             # Make prediction
@@ -299,4 +277,4 @@ class DiseaseDetector:
 
 def get_disease_detector():
     """Public function to get the disease detector instance"""
-    return DiseaseDetector.get_instance() 
+    return DiseaseDetector.get_instance()
