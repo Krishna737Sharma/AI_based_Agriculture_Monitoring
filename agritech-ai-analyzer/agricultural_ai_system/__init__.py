@@ -1,10 +1,10 @@
 # agricultural_ai_system/__init__.py
-from .crop_monitor import get_crop_monitor
-from .disease_detector import get_disease_detector
-from .nutrient_analyser import get_nutrient_analyzer
-from .pest_detector import get_pest_detector
-from .soil_monitor import get_soil_analyzer
-from .weed_detector import get_weed_detector
+from agritech-ai-analyzer.agricultural_ai_system.crop_monitor import get_crop_monitor
+from agritech-ai-analyzer.agricultural_ai_system.disease_detector import get_disease_detector
+from agritech-ai-analyzer.agricultural_ai_system.nutrient_analyser import get_nutrient_analyzer
+from agritech-ai-analyzer.agricultural_ai_system.pest_detector import get_pest_detector
+from agritech-ai-analyzer.agricultural_ai_system.soil_monitor import get_soil_analyzer
+from agritech-ai-analyzer.agricultural_ai_system.weed_detector import get_weed_detector
 
 __all__ = [
     'get_crop_monitor',
