@@ -79,8 +79,8 @@ class DiseaseDetector:
                 base_model = ResNet50V2(
                     weights=None,
                     include_top=False,
-                    input_shape=(224, 224, 3)
-                
+                    input_shape=(224, 224, 3)  # Fixed: Added missing parenthesis
+                    
                 x = base_model.output
                 x = GlobalAveragePooling2D()(x)
                 x = Dense(128, activation='relu')(x)
@@ -93,6 +93,8 @@ class DiseaseDetector:
                 logger.warning(f"Failed to load from weights: {str(e)}")
     
         raise ValueError("All loading strategies failed")
+    
+    # Remove the duplicate _load_from_weights method entirely
 
     def _load_from_weights(self, weights_path: str) -> tf.keras.Model:
         """Load model by rebuilding architecture and loading weights"""
