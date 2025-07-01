@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL_PATH = "models/pest_detection_model.keras"
-DEFAULT_CLASS_NAMES_PATH = "/workspaces/AI_based_Agriculture_Monitoring/agritech-ai-analyzer/classes/pest_class_names.npy"
+DEFAULT_CLASS_NAMES_PATH = "agritech-ai-analyzer/classes/pest_class_names.npy"
 
 class PestDetector:
     _instance = None
