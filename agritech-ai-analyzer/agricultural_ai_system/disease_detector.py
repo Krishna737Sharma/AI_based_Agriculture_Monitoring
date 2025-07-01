@@ -96,23 +96,6 @@ class DiseaseDetector:
     
     # Remove the duplicate _load_from_weights method entirely
 
-    def _load_from_weights(self, weights_path: str) -> tf.keras.Model:
-        """Load model by rebuilding architecture and loading weights"""
-        logger.info("Loading model from weights")
-        
-        # Properly formatted Sequential model construction
-        model = Sequential([
-            Input(shape=(224, 224, 3)),  # Note the double closing parentheses
-            ResNet50V2(weights=None, include_top=False),
-            GlobalAveragePooling2D(),
-            Dense(128, activation='relu'),
-            Dense(len(self.class_names), activation='softmax')
-        ])
-        model.load_weights(weights_path)
-        return model
-        model.load_weights(weights_path)
-        return model
-
     def _load_full_model(self, model_path: str) -> tf.keras.Model:
         """Load complete model file"""
         logger.info("Loading full model")
