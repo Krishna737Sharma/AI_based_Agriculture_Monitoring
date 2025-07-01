@@ -272,4 +272,5 @@ def display_results(result, analysis_type):
         else:
             st.info("No visualization available for this analysis")
 if __name__ == "__main__":
+    download_models()
     main()
