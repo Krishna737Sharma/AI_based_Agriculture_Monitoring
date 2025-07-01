@@ -1,4 +1,4 @@
-# Package initialization
+# agricultural_ai_system/__init__.py
 from .crop_monitor import get_crop_monitor
 from .disease_detector import get_disease_detector
 from .nutrient_analyser import get_nutrient_analyzer
