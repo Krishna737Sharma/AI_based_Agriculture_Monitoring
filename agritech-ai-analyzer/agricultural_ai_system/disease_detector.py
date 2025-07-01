@@ -65,26 +65,34 @@ class DiseaseDetector:
 
     def _load_model_with_fallbacks(self, model_path: str, weights_path: str) -> tf.keras.Model:
         """Try multiple strategies to load the model"""
-        # Strategy 1: Try loading weights directly
-        if os.path.exists(weights_path):
-            try:
-                return self._load_from_weights(weights_path)
-            except Exception as e:
-                logger.warning(f"Failed to load from weights: {str(e)}")
-
-        # Strategy 2: Try loading full model
+        # Try loading full model first
         if os.path.exists(model_path):
             try:
                 return self._load_full_model(model_path)
             except Exception as e:
                 logger.warning(f"Failed to load full model: {str(e)}")
-
-        # Strategy 3: Rebuild model architecture
-        try:
-            return self._rebuild_model(weights_path if os.path.exists(weights_path) else model_path)
-        except Exception as e:
-            logger.error(f"All loading strategies failed: {str(e)}")
-            raise ValueError(f"Could not load Keras model: {str(e)}")
+        
+        # Then try loading from weights with correct architecture
+        if os.path.exists(weights_path):
+            try:
+                # Build model with correct architecture matching the weights
+                base_model = ResNet50V2(
+                    weights=None,
+                    include_top=False,
+                    input_shape=(224, 224, 3)
+                
+                x = base_model.output
+                x = GlobalAveragePooling2D()(x)
+                x = Dense(128, activation='relu')(x)
+                predictions = Dense(len(self.class_names), activation='softmax')(x)
+                
+                model = Model(inputs=base_model.input, outputs=predictions)
+                model.load_weights(weights_path)
+                return model
+            except Exception as e:
+                logger.warning(f"Failed to load from weights: {str(e)}")
+    
+        raise ValueError("All loading strategies failed")
 
     def _load_from_weights(self, weights_path: str) -> tf.keras.Model:
         """Load model by rebuilding architecture and loading weights"""
