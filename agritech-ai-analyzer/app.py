@@ -81,12 +81,10 @@ def download_models():
         "plant_disease_model.weights.h5": "https://drive.google.com/uc?id=1pS8COvQ_6S8QGk1aojolRQNZ68iLcz4M",
         "yolov8x-seg.pt": "https://drive.google.com/uc?id=1_Xku-efANU3yT9oMbA9J_gnOKlG6zz1S",
         "soil_scaler.pkl": "https://drive.google.com/uc?id=1X0dEHvZtXbPRRj1qyTNOmAx61AbFc1gN",
-        "soil_label_encoder.pkl": "https://drive.google.com/uc?id=1uBWep6TKSKfzZz_-weivsMr0SbGz5ZTi",
         "soil_classifier_rf.pkl": "https://drive.google.com/uc?id=1iIw_xSSOERp5gG2dAoQizkoA7GbdcT4E",
         "soil_classifier_cnn.h5": "https://drive.google.com/uc?id=1eyI5GnpWEY6WQqDGySy4iFS5hE6_8yRd",
         "plant_disease_model.keras": "https://drive.google.com/uc?id=14Tt26X3R7Rdo0jyD6wmXHnhfaH2CCBgh",
         "pest_detection_model.keras": "https://drive.google.com/uc?id=1HW7JZQRh3ssfVRhZq_s-JQAZOMLjSAVB",
-        "pest_class_names.npy": "https://drive.google.com/uc?id=1cqjAaSLCcaqPPrv_X3pX6xIcRnXmJTrd",
         "nutrient_model.keras": "https://drive.google.com/uc?id=1OUTCmm2_RlqgB0v4lHMGI3aoixhoR0Pt",
     }
 
