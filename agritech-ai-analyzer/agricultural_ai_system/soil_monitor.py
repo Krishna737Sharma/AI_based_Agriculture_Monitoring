@@ -42,7 +42,7 @@ class SoilImageAnalyzer:
         try:
             rf_path = os.path.join(self.model_dir, "soil_classifier_rf.pkl")
             scaler_path = os.path.join(self.model_dir, "soil_scaler.pkl")
-            encoder_path ="/workspaces/AI_based_Agriculture_Monitoring/agritech-ai-analyzer/classes/soil_label_encoder.pkl"
+            encoder_path ="agritech-ai-analyzer/classes/soil_label_encoder.pkl"
             cnn_path = os.path.join(self.model_dir, "soil_classifier_cnn.h5")
             
             if os.path.exists(rf_path):
