@@ -26,7 +26,7 @@ class PestDetector:
         self.model = None
         self.class_names = []
         self.input_size = (224, 224)
-        self.confidence_threshold = 0.5  # Minimum confidence for reliable detection
+        self.confidence_threshold = 0.3  # Minimum confidence for reliable detection
         
         try:
             # Check if files exist
