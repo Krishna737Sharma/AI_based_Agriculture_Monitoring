@@ -238,10 +238,11 @@ def display_results(result, analysis_type):
             if result.get("pest_detected", True):
                 status = "Yes"
             else:
-                "False"
+                "NO"
             status_class = "unhealthy" if result.get("pest_detected", False) else "healthy"
             st.markdown(
-                f'<p class="result-value"><span class="health-status {status_class}">{status}</span></p>'
+                f'<p class="result-value"><span class="health-status {status_class}">{status}</span></p>',
+                unsafe_allow_html=True
             )
             
             # Display pest type with confidence
