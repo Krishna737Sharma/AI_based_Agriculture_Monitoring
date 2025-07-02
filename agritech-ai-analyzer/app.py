@@ -231,17 +231,52 @@ def display_results(result, analysis_type):
                     st.markdown(f'<p class="result-value">- {rec}</p>', unsafe_allow_html=True)
         
         elif analysis_type == "Pest Detection":
-            if "pest_detected" in result:
-                st.markdown('<p class="result-title">Pest Detected</p>', unsafe_allow_html=True)
-                st.markdown(f'<p class="result-value">{"Yes" if result["pest_detected"] else "No"}</p>', unsafe_allow_html=True)
+            st.markdown('<div class="result-card">', unsafe_allow_html=True)
             
+            # Display basic pest detection info
+            st.markdown('<p class="result-title">Pest Detected</p>', unsafe_allow_html=True)
+            status = "Yes" if result.get("pest_detected", False) else "No"
+            status_class = "unhealthy" if result.get("pest_detected", False) else "healthy"
+            st.markdown(
+                f'<p class="result-value"><span class="health-status {status_class}">{status}</span></p>', 
+                unsafe_allow_html=True
+            )
+            
+            # Display pest type with confidence
             if "pest_type" in result:
                 st.markdown('<p class="result-title">Pest Type</p>', unsafe_allow_html=True)
                 st.markdown(f'<p class="result-value">{result["pest_type"]}</p>', unsafe_allow_html=True)
             
             if "confidence" in result:
                 st.markdown('<p class="result-title">Confidence</p>', unsafe_allow_html=True)
-                st.markdown(f'<p class="result-value">{result["confidence"]}%</p>', unsafe_allow_html=True)
+                st.markdown(f'<p class="result-value">{result["confidence"]:.1f}%</p>', unsafe_allow_html=True)
+            
+            # Display reliability if available
+            if "reliability" in result:
+                st.markdown('<p class="result-title">Reliability</p>', unsafe_allow_html=True)
+                reliability = result["reliability"].lower()
+                st.markdown(
+                    f'<p class="result-value"><span class="health-status {reliability}">{result["reliability"]}</span></p>',
+                    unsafe_allow_html=True
+                )
+            
+            # Display top predictions if available
+            if "top_predictions" in result and result["top_predictions"]:
+                st.markdown('<p class="result-title">Top Predictions</p>', unsafe_allow_html=True)
+                for pred in result["top_predictions"]:
+                    st.markdown(
+                        f'<p class="result-value">- {pred["pest_type"]}: {pred["confidence"]:.1f}%</p>',
+                        unsafe_allow_html=True
+                    )
+            
+            # Display recommendations if available
+            if "recommendations" in result and result["recommendations"]:
+                st.markdown('<p class="result-title">Recommendations</p>', unsafe_allow_html=True)
+                for rec in result["recommendations"]:
+                    if rec.strip():  # Only display non-empty recommendations
+                        st.markdown(f'<p class="result-value">• {rec}</p>', unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
         
         elif analysis_type == "Soil Classification":
             if "classification_prediction" in result:
