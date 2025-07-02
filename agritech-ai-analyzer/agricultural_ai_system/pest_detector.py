@@ -26,7 +26,7 @@ class PestDetector:
         self.model = None
         self.class_names = []
         self.input_size = (224, 224)
-        self.confidence_threshold = 0.3  # Minimum confidence for reliable detection
+        self.confidence_threshold = 0.2  # Minimum confidence for reliable detection
         
         try:
             # Check if files exist
@@ -294,10 +294,7 @@ class PestDetector:
             top_preds = self.get_top_predictions(predictions[0])
             
             # Determine if pest is detected based on confidence and class
-            if confidence>=30:
-                pest_detected = 'Yes'
-            else:
-                pest_detected = 'No'
+            pest_detected = self.is_pest_detected(pest_class, confidence)
             
             # Create visualization
             visualization = self.create_visualization(image, pest_class, confidence, top_preds)
