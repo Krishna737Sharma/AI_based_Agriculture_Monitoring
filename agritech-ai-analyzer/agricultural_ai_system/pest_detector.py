@@ -334,7 +334,7 @@ class PestDetector:
 
     def is_pest_detected(self,confidence: float) -> bool:
         # Check confidence threshold (30% in your case)
-        if confidence < self.confidence_threshold * 100:
+        if max(confidence) < self.confidence_threshold * 100:
             return False
             
         return True
