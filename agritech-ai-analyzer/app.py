@@ -235,7 +235,7 @@ def display_results(result, analysis_type):
             
             # Display basic pest detection info
             st.markdown('<p class="result-title">Pest Detected</p>', unsafe_allow_html=True)
-            if result.get("pest_detected", True):
+            if result.get("pest_detected",False):
                 status = "Yes"
             else:
                 status ="NO"
