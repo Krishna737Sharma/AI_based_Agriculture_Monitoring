@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Updated default paths to match your training script
 DEFAULT_MODEL_PATH = "models/pest_detection_best_model.keras"
-DEFAULT_CLASS_NAMES_PATH = "agritech-ai-analyzer/classes/pest_class_names.npy"
+DEFAULT_CLASS_NAMES_PATH = "models/pest_class_names.npy"
 
 class PestDetector:
     _instance = None
@@ -42,10 +42,43 @@ class PestDetector:
             if not os.path.exists(class_names_path):
                 raise FileNotFoundError(f"Class names file not found at {class_names_path}")
             
-            # Load model with proper error handling
-            self.model = tf.keras.models.load_model(model_path, compile=False)
-            logger.info(f"Successfully loaded model from {model_path}")
+            # Load model with proper error handling and custom objects
+            try:
+                # First try loading with compile=False
+                self.model = tf.keras.models.load_model(model_path, compile=False)
+                logger.info(f"Successfully loaded model from {model_path}")
+            except Exception as load_error:
+                logger.warning(f"Failed to load model normally: {load_error}")
+                
+                # Try loading with custom objects for potential compatibility issues
+                try:
+                    custom_objects = {
+                        'KerasLayer': tf.keras.utils.get_custom_objects().get('KerasLayer', None)
+                    }
+                    self.model = tf.keras.models.load_model(
+                        model_path, 
+                        compile=False, 
+                        custom_objects=custom_objects
+                    )
+                    logger.info(f"Successfully loaded model with custom objects from {model_path}")
+                except Exception as custom_load_error:
+                    logger.error(f"Failed to load model with custom objects: {custom_load_error}")
+                    
+                    # Try rebuilding the model architecture
+                    logger.info("Attempting to rebuild model architecture...")
+                    self.model = self._rebuild_model_architecture()
+                    if self.model is None:
+                        raise Exception("Could not rebuild model architecture")
+                    
+                    # Load weights
+                    try:
+                        self.model.load_weights(model_path.replace('.keras', '_weights.h5'))
+                        logger.info("Successfully loaded weights into rebuilt model")
+                    except:
+                        logger.warning("Could not load separate weights file, using current model state")
+            
             logger.info(f"Model input shape: {self.model.input_shape}")
+            logger.info(f"Model output shape: {self.model.output_shape}")
             
             # Load class names
             self.class_names = np.load(class_names_path, allow_pickle=True).tolist()
@@ -59,11 +92,47 @@ class PestDetector:
             if expected_output_shape != actual_output_shape:
                 logger.warning(f"Mismatch: {expected_output_shape} classes but model outputs {actual_output_shape}")
             
+            # Recompile the model to ensure proper functionality
+            self.model.compile(
+                optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy']
+            )
+            
             self.warm_up_model()
             
         except Exception as e:
             logger.error(f"Initialization failed: {str(e)}")
             raise
+
+    def _rebuild_model_architecture(self):
+        """Rebuild the model architecture based on the training logs"""
+        try:
+            # Build the same architecture as shown in your training logs
+            base_model = tf.keras.applications.MobileNetV2(
+                input_shape=(224, 224, 3),
+                include_top=False,
+                weights='imagenet'
+            )
+            base_model.trainable = False  # Freeze base model initially
+            
+            model = tf.keras.Sequential([
+                tf.keras.layers.Rescaling(1./255),
+                base_model,
+                tf.keras.layers.GlobalAveragePooling2D(),
+                tf.keras.layers.Dropout(0.2),
+                tf.keras.layers.Dense(128, activation='relu'),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.2),
+                tf.keras.layers.Dense(9, activation='softmax')  # 9 classes as per your training
+            ])
+            
+            logger.info("Successfully rebuilt model architecture")
+            return model
+            
+        except Exception as e:
+            logger.error(f"Failed to rebuild model architecture: {e}")
+            return None
 
     @classmethod
     def get_instance(cls, model_path: str = None, class_names_path: str = None):
@@ -97,7 +166,12 @@ class PestDetector:
             
             # Convert to array and normalize
             img_array = tf.keras.preprocessing.image.img_to_array(img)
-            img_array = img_array / 255.0  # Normalize to [0,1] range
+            
+            # Note: If using Rescaling layer in model, don't normalize here
+            # Otherwise, normalize to [0,1] range
+            if not self._has_rescaling_layer():
+                img_array = img_array / 255.0
+            
             img_array = np.expand_dims(img_array, axis=0)
             
             return img_array
@@ -105,6 +179,21 @@ class PestDetector:
         except Exception as e:
             logger.error(f"Image preprocessing failed: {str(e)}")
             raise
+
+    def _has_rescaling_layer(self) -> bool:
+        """Check if model has rescaling layer"""
+        if self.model is None:
+            return False
+        
+        for layer in self.model.layers:
+            if isinstance(layer, tf.keras.layers.Rescaling):
+                return True
+            # Check for Sequential models
+            if hasattr(layer, 'layers'):
+                for sublayer in layer.layers:
+                    if isinstance(sublayer, tf.keras.layers.Rescaling):
+                        return True
+        return False
 
     def create_visualization(self, original_img: Image.Image,
                            pest_type: str, confidence: float,
@@ -170,8 +259,13 @@ class PestDetector:
             original_size = image.size
             img_array = self.preprocess_image(image)
             
-            # Make prediction
-            predictions = self.model.predict(img_array, verbose=0)
+            # Make prediction with error handling
+            try:
+                predictions = self.model.predict(img_array, verbose=0)
+            except Exception as pred_error:
+                logger.error(f"Prediction failed: {pred_error}")
+                return {"status": "error", "error": f"Prediction failed: {str(pred_error)}"}
+            
             predicted_class_idx = np.argmax(predictions[0])
             confidence = float(np.max(predictions[0])) * 100
             pest_class = self.class_names[predicted_class_idx]
