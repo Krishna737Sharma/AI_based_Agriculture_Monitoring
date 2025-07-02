@@ -84,7 +84,7 @@ def download_models():
         "soil_classifier_rf.pkl": "https://drive.google.com/uc?id=1iIw_xSSOERp5gG2dAoQizkoA7GbdcT4E",
         "soil_classifier_cnn.h5": "https://drive.google.com/uc?id=1eyI5GnpWEY6WQqDGySy4iFS5hE6_8yRd",
         "plant_disease_model.keras": "https://drive.google.com/uc?id=14Tt26X3R7Rdo0jyD6wmXHnhfaH2CCBgh",
-        "pest_detection_model.keras": "https://drive.google.com/uc?id=1_-LAQZ5-FzHL7NyBekrKpkYlc7KOHKgX",
+        "pest_detection_best_model.keras": "https://drive.google.com/uc?id=1DT5bghUE3CpxoE3046dp24aXQ8sDUwyd",
         "nutrient_model.keras": "https://drive.google.com/uc?id=1OUTCmm2_RlqgB0v4lHMGI3aoixhoR0Pt",
     }
 
