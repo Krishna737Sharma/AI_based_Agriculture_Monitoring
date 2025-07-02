@@ -294,7 +294,7 @@ class PestDetector:
             top_preds = self.get_top_predictions(predictions[0])
             
             # Determine if pest is detected based on confidence and class
-            pest_detected = self.is_pest_detected(confidence)
+            pest_detected = self.is_pest_detected(confidence,top_preds)
             
             # Create visualization
             visualization = self.create_visualization(image, pest_class, confidence, top_preds)
@@ -332,9 +332,9 @@ class PestDetector:
             logger.error(f"File analysis failed: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def is_pest_detected(self,confidence: float) -> bool:
+    def is_pest_detected(self,confidence: float,top_pred) -> bool:
         # Check confidence threshold (30% in your case)
-        if max(confidence) < self.confidence_threshold * 100:
+        if top_pred[0]< self.confidence_threshold * 100:
             return False
             
         return True
