@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Updated default paths to match your training script
 DEFAULT_MODEL_PATH = "models/pest_detection_best_model.keras"
-DEFAULT_CLASS_NAMES_PATH = "models/pest_class_names.npy"
+DEFAULT_CLASS_NAMES_PATH = "agritech-ai-analyzer/classes/pest_class_names.npy"
 
 class PestDetector:
     _instance = None
