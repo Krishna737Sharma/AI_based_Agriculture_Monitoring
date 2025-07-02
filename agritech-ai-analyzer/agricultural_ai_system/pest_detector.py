@@ -26,7 +26,7 @@ class PestDetector:
         self.model = None
         self.class_names = []
         self.input_size = (224, 224)
-        self.confidence_threshold = 0.3  # Minimum confidence for reliable detection
+        self.confidence_threshold = 0.1  # Minimum confidence for reliable detection
         
         try:
             # Check if files exist
@@ -294,7 +294,7 @@ class PestDetector:
             top_preds = self.get_top_predictions(predictions[0])
             
             # Determine if pest is detected based on confidence and class
-            pest_detected = self.is_pest_detected(pest_class, confidence)
+            pest_detected = self.is_pest_detected(confidence)
             
             # Create visualization
             visualization = self.create_visualization(image, pest_class, confidence, top_preds)
@@ -332,15 +332,7 @@ class PestDetector:
             logger.error(f"File analysis failed: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def is_pest_detected(self, pest_class: str, confidence: float) -> bool:
-        """Determine if a pest is actually detected"""
-        pest_lower = pest_class.lower()
-        
-        # Check for no-pest classes
-        no_pest_indicators = ['no_pest', 'healthy', 'normal', 'clean']
-        if any(indicator in pest_lower for indicator in no_pest_indicators):
-            return False
-        
+    def is_pest_detected(self,confidence: float) -> bool:
         # Check confidence threshold (30% in your case)
         if confidence < self.confidence_threshold * 100:
             return False
@@ -383,7 +375,7 @@ class PestDetector:
             recommendations.append("⚠️ Low confidence detection - consider getting a second opinion")
             recommendations.append("")
         
-        if not self.is_pest_detected(pest_type, confidence):
+        if not self.is_pest_detected(confidence):
             recommendations.extend([
                 "✅ No significant pest detected",
                 "",
