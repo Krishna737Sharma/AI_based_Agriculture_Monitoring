@@ -3,16 +3,18 @@ import logging
 import numpy as np
 from PIL import Image
 import tensorflow as tf
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Tuple
 import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
 import streamlit as st
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL_PATH = "models/pest_detection_model.keras"
+# Updated default paths to match your training script
+DEFAULT_MODEL_PATH = "models/pest_detection_best_model.keras"
 DEFAULT_CLASS_NAMES_PATH = "agritech-ai-analyzer/classes/pest_class_names.npy"
 
 class PestDetector:
@@ -24,20 +26,38 @@ class PestDetector:
         self.model = None
         self.class_names = []
         self.input_size = (224, 224)
+        self.confidence_threshold = 0.5  # Minimum confidence for reliable detection
         
         try:
+            # Check if files exist
             if not os.path.exists(model_path):
-                raise FileNotFoundError(f"Model file not found at {model_path}")
+                # Try alternative model path
+                alt_model_path = "models/pest_detection_final_model.keras"
+                if os.path.exists(alt_model_path):
+                    model_path = alt_model_path
+                    logger.info(f"Using alternative model path: {alt_model_path}")
+                else:
+                    raise FileNotFoundError(f"Model file not found at {model_path} or {alt_model_path}")
+            
             if not os.path.exists(class_names_path):
                 raise FileNotFoundError(f"Class names file not found at {class_names_path}")
             
+            # Load model with proper error handling
             self.model = tf.keras.models.load_model(model_path, compile=False)
             logger.info(f"Successfully loaded model from {model_path}")
+            logger.info(f"Model input shape: {self.model.input_shape}")
             
+            # Load class names
             self.class_names = np.load(class_names_path, allow_pickle=True).tolist()
             if not self.class_names:
                 raise ValueError("Class names file is empty")
-            logger.info(f"Loaded {len(self.class_names)} pest classes")
+            logger.info(f"Loaded {len(self.class_names)} pest classes: {self.class_names}")
+            
+            # Verify model output matches class names
+            expected_output_shape = len(self.class_names)
+            actual_output_shape = self.model.output_shape[-1]
+            if expected_output_shape != actual_output_shape:
+                logger.warning(f"Mismatch: {expected_output_shape} classes but model outputs {actual_output_shape}")
             
             self.warm_up_model()
             
@@ -46,70 +66,143 @@ class PestDetector:
             raise
 
     @classmethod
-    @st.cache_resource
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
+    def get_instance(cls, model_path: str = None, class_names_path: str = None):
+        """Get singleton instance with optional custom paths"""
+        if cls._instance is None or (model_path is not None or class_names_path is not None):
+            # Create new instance if paths are provided
+            cls._instance = cls(
+                model_path or DEFAULT_MODEL_PATH,
+                class_names_path or DEFAULT_CLASS_NAMES_PATH
+            )
         return cls._instance
 
     def warm_up_model(self) -> None:
+        """Warm up the model with a dummy prediction"""
         try:
             dummy_input = np.zeros((1, *self.input_size, 3), dtype=np.float32)
-            _ = self.model.predict(dummy_input)
+            _ = self.model.predict(dummy_input, verbose=0)
             logger.info("Model warmed up successfully")
         except Exception as e:
             logger.warning(f"Model warmup failed: {str(e)}")
 
     def preprocess_image(self, image: Image.Image) -> np.ndarray:
-        img = image.resize(self.input_size)
-        img_array = tf.keras.preprocessing.image.img_to_array(img)
-        img_array = img_array / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
-        return img_array
+        """Preprocess image for model prediction"""
+        try:
+            # Convert to RGB if needed
+            if image.mode != 'RGB':
+                image = image.convert('RGB')
+            
+            # Resize image
+            img = image.resize(self.input_size, Image.Resampling.LANCZOS)
+            
+            # Convert to array and normalize
+            img_array = tf.keras.preprocessing.image.img_to_array(img)
+            img_array = img_array / 255.0  # Normalize to [0,1] range
+            img_array = np.expand_dims(img_array, axis=0)
+            
+            return img_array
+            
+        except Exception as e:
+            logger.error(f"Image preprocessing failed: {str(e)}")
+            raise
 
     def create_visualization(self, original_img: Image.Image,
-                           pest_type: str, confidence: float) -> str:
+                           pest_type: str, confidence: float,
+                           top_predictions: List[Dict[str, Any]] = None) -> str:
+        """Create visualization with prediction results"""
         try:
-            fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-            ax.imshow(original_img)
-            ax.set_title(f"Predicted Pest: {pest_type}\nConfidence: {confidence:.1f}%", pad=10)
-            ax.axis('off')
+            # Create figure with better layout
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+            
+            # Display original image
+            ax1.imshow(original_img)
+            ax1.set_title(f"Input Image", fontsize=12, fontweight='bold')
+            ax1.axis('off')
+            
+            # Create prediction results plot
+            if top_predictions and len(top_predictions) > 1:
+                classes = [pred['pest_type'].replace('_', ' ').title() for pred in top_predictions[:5]]
+                confidences = [pred['confidence'] for pred in top_predictions[:5]]
+                
+                colors = ['green' if i == 0 else 'lightblue' for i in range(len(classes))]
+                bars = ax2.barh(range(len(classes)), confidences, color=colors)
+                
+                ax2.set_yticks(range(len(classes)))
+                ax2.set_yticklabels(classes)
+                ax2.set_xlabel('Confidence (%)')
+                ax2.set_title('Top Predictions', fontsize=12, fontweight='bold')
+                ax2.set_xlim(0, 100)
+                
+                # Add confidence values on bars
+                for i, (bar, conf) in enumerate(zip(bars, confidences)):
+                    ax2.text(conf + 1, bar.get_y() + bar.get_height()/2, 
+                            f'{conf:.1f}%', va='center', fontsize=10)
+            else:
+                ax2.text(0.5, 0.5, f"Predicted: {pest_type.replace('_', ' ').title()}\nConfidence: {confidence:.1f}%",
+                        ha='center', va='center', transform=ax2.transAxes,
+                        fontsize=14, bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue"))
+                ax2.set_xlim(0, 1)
+                ax2.set_ylim(0, 1)
+                ax2.axis('off')
+            
             plt.tight_layout()
             
+            # Convert to base64
             buf = BytesIO()
-            plt.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+            plt.savefig(buf, format='png', bbox_inches='tight', dpi=150)
             plt.close()
             return base64.b64encode(buf.getvalue()).decode('utf-8')
+            
         except Exception as e:
-            logger.error(f"Visualization failed: {str(e)}")
+            logger.error(f"Visualization creation failed: {str(e)}")
             return ""
 
     def analyze_pest_from_bytes(self, image_bytes: bytes) -> Dict[str, Any]:
+        """Analyze pest from image bytes"""
         if not self.model:
             return {"status": "error", "error": "Model not loaded"}
         if not self.class_names:
             return {"status": "error", "error": "Class names not loaded"}
             
         try:
-            image = Image.open(BytesIO(image_bytes)).convert('RGB')
+            # Load and preprocess image
+            image = Image.open(BytesIO(image_bytes))
+            original_size = image.size
             img_array = self.preprocess_image(image)
             
-            predictions = self.model.predict(img_array)
-            predicted_class = np.argmax(predictions[0])
+            # Make prediction
+            predictions = self.model.predict(img_array, verbose=0)
+            predicted_class_idx = np.argmax(predictions[0])
             confidence = float(np.max(predictions[0])) * 100
-            pest_class = self.class_names[predicted_class]
+            pest_class = self.class_names[predicted_class_idx]
             
-            visualization = self.create_visualization(image, pest_class, confidence)
-            recommendations = self.get_pest_recommendations(pest_class)
+            # Get top predictions
             top_preds = self.get_top_predictions(predictions[0])
+            
+            # Determine if pest is detected based on confidence and class
+            pest_detected = self.is_pest_detected(pest_class, confidence)
+            
+            # Create visualization
+            visualization = self.create_visualization(image, pest_class, confidence, top_preds)
+            
+            # Get recommendations
+            recommendations = self.get_pest_recommendations(pest_class, confidence)
+            
+            # Calculate prediction reliability
+            reliability = self.calculate_reliability(predictions[0])
             
             return {
                 "status": "success",
-                "pest_detected": pest_class.lower() != "no_pest",
+                "pest_detected": pest_detected,
                 "pest_type": pest_class,
                 "confidence": confidence,
+                "reliability": reliability,
                 "top_predictions": top_preds,
                 "recommendations": recommendations,
+                "image_info": {
+                    "original_size": original_size,
+                    "processed_size": self.input_size
+                },
                 "visualization": f"data:image/png;base64,{visualization}" if visualization else None
             }
             
@@ -117,37 +210,115 @@ class PestDetector:
             logger.error(f"Pest detection failed: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def get_top_predictions(self, predictions: np.ndarray, top_k: int = 3) -> List[Dict[str, Any]]:
+    def analyze_pest_from_file(self, image_file) -> Dict[str, Any]:
+        """Analyze pest from uploaded file (Streamlit UploadedFile)"""
+        try:
+            return self.analyze_pest_from_bytes(image_file.read())
+        except Exception as e:
+            logger.error(f"File analysis failed: {str(e)}")
+            return {"status": "error", "error": str(e)}
+
+    def is_pest_detected(self, pest_class: str, confidence: float) -> bool:
+        """Determine if a pest is actually detected"""
+        pest_lower = pest_class.lower()
+        
+        # Check for no-pest classes
+        no_pest_indicators = ['no_pest', 'healthy', 'normal', 'clean']
+        if any(indicator in pest_lower for indicator in no_pest_indicators):
+            return False
+        
+        # Check confidence threshold
+        if confidence < self.confidence_threshold * 100:
+            return False
+            
+        return True
+
+    def calculate_reliability(self, predictions: np.ndarray) -> str:
+        """Calculate prediction reliability based on confidence distribution"""
+        max_conf = np.max(predictions)
+        second_max_conf = np.partition(predictions, -2)[-2]
+        
+        confidence_gap = max_conf - second_max_conf
+        
+        if max_conf > 0.8 and confidence_gap > 0.3:
+            return "High"
+        elif max_conf > 0.6 and confidence_gap > 0.2:
+            return "Medium"
+        else:
+            return "Low"
+
+    def get_top_predictions(self, predictions: np.ndarray, top_k: int = 5) -> List[Dict[str, Any]]:
+        """Get top k predictions with confidence scores"""
         if not self.class_names or len(predictions) != len(self.class_names):
             return []
             
         top_indices = np.argsort(predictions)[-top_k:][::-1]
         return [{
             "pest_type": self.class_names[i],
-            "confidence": float(predictions[i]) * 100
-        } for i in top_indices]
+            "confidence": float(predictions[i]) * 100,
+            "class_index": int(i)
+        } for i in top_indices if predictions[i] > 0.01]  # Only show predictions > 1%
 
-    def get_pest_recommendations(self, pest_type: str) -> List[str]:
+    def get_pest_recommendations(self, pest_type: str, confidence: float) -> List[str]:
+        """Get detailed recommendations based on pest type and confidence"""
         pest_lower = pest_type.lower()
         recommendations = []
         
-        if pest_lower == "no_pest":
-            recommendations.append("No pests detected. Maintain regular monitoring.")
-        else:
-            recommendations.append(f"Detected: {pest_type.replace('_', ' ').title()}")
-            recommendations.append("Recommended Actions:")
+        # Add confidence warning if low
+        if confidence < 70:
+            recommendations.append("⚠️ Low confidence detection - consider getting a second opinion")
+            recommendations.append("")
+        
+        if not self.is_pest_detected(pest_type, confidence):
             recommendations.extend([
-                "- Consult with agricultural expert for specific treatment",
-                "- Consider integrated pest management (IPM)",
-                "- Use targeted pesticides if necessary",
-                "- Remove affected plant parts",
-                "\nGeneral Prevention:",
-                "- Maintain crop rotation",
-                "- Use pest-resistant varieties",
-                "- Monitor fields regularly"
+                "✅ No significant pest detected",
+                "",
+                "🔍 Continue regular monitoring:",
+                "• Check plants weekly for early signs",
+                "• Look for unusual leaf patterns or damage",
+                "• Monitor plant health and growth"
+            ])
+        else:
+            pest_display = pest_type.replace('_', ' ').title()
+            recommendations.extend([
+                f"🐛 Detected: {pest_display}",
+                f"📊 Confidence: {confidence:.1f}%",
+                "",
+                "🚨 Immediate Actions:",
+                "• Isolate affected plants if possible",
+                "• Document the extent of infestation",
+                "• Take additional photos for expert consultation",
+                "",
+                "💡 Treatment Options:",
+                "• Consult with local agricultural extension office",
+                "• Consider integrated pest management (IPM)",
+                "• Use targeted, eco-friendly treatments first",
+                "• Apply pesticides only if necessary",
+                "",
+                "🛡️ Prevention Measures:",
+                "• Maintain proper plant spacing",
+                "• Ensure adequate ventilation",
+                "• Remove plant debris regularly",
+                "• Use companion planting strategies",
+                "• Monitor soil health and nutrition"
             ])
         
         return recommendations
 
-def get_pest_detector():
-    return PestDetector.get_instance()
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get information about the loaded model"""
+        if not self.model:
+            return {"error": "Model not loaded"}
+        
+        return {
+            "input_shape": self.model.input_shape,
+            "output_shape": self.model.output_shape,
+            "num_classes": len(self.class_names),
+            "class_names": self.class_names,
+            "model_layers": len(self.model.layers),
+            "trainable_params": self.model.count_params()
+        }
+
+def get_pest_detector(model_path: str = None, class_names_path: str = None):
+    """Factory function to get pest detector instance"""
+    return PestDetector.get_instance(model_path, class_names_path)
