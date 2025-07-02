@@ -294,7 +294,10 @@ class PestDetector:
             top_preds = self.get_top_predictions(predictions[0])
             
             # Determine if pest is detected based on confidence and class
-            pest_detected = self.is_pest_detected(pest_class, confidence)
+            if confidence>=30:
+                pest_detected = 'Yes'
+            else:
+                pest_detected = 'No'
             
             # Create visualization
             visualization = self.create_visualization(image, pest_class, confidence, top_preds)
