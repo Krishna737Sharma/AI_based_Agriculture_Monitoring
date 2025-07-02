@@ -1,6 +1,6 @@
 streamlit==1.29.0
 gdown==5.2.0
-torch==2.2.0
+torch== 2.2.0
 torchvision==0.17.0
 tensorflow==2.16.1
 keras==3.0.1
