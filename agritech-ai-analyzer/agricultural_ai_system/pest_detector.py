@@ -26,7 +26,7 @@ class PestDetector:
         self.model = None
         self.class_names = []
         self.input_size = (224, 224)
-        self.confidence_threshold = 0.2  # Minimum confidence for reliable detection
+        self.confidence_threshold = 0.3  # Minimum confidence for reliable detection
         
         try:
             # Check if files exist
@@ -332,15 +332,7 @@ class PestDetector:
             logger.error(f"File analysis failed: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def is_pest_detected(self, pest_class: str, confidence: float) -> bool:
-        """Determine if a pest is actually detected"""
-        pest_lower = pest_class.lower()
-        
-        # Check for no-pest classes
-        no_pest_indicators = ['no_pest', 'healthy', 'normal', 'clean']
-        if any(indicator in pest_lower for indicator in no_pest_indicators):
-            return False
-        
+    def is_pest_detected(self, pest_class: str, confidence: float) -> bool:      
         # Check confidence threshold
         if confidence < self.confidence_threshold * 100:
             return False
