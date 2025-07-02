@@ -13,7 +13,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Updated default paths to match your training script
+# Updated default paths
 DEFAULT_MODEL_PATH = "models/pest_detection_best_model.keras"
 DEFAULT_CLASS_NAMES_PATH = "agritech-ai-analyzer/classes/pest_class_names.npy"
 
@@ -26,12 +26,12 @@ class PestDetector:
         self.model = None
         self.class_names = []
         self.input_size = (224, 224)
-        self.confidence_threshold = 0.5  # Minimum confidence for reliable detection
+        self.confidence_threshold = 0.5
+        self.min_input_size = (64, 64)
         
         try:
             # Check if files exist
             if not os.path.exists(model_path):
-                # Try alternative model path
                 alt_model_path = "models/pest_detection_final_model.keras"
                 if os.path.exists(alt_model_path):
                     model_path = alt_model_path
@@ -42,8 +42,25 @@ class PestDetector:
             if not os.path.exists(class_names_path):
                 raise FileNotFoundError(f"Class names file not found at {class_names_path}")
             
-            # Load model with proper error handling
-            self.model = tf.keras.models.load_model(model_path, compile=False)
+            # Load with custom objects
+            custom_objects = {
+                'Adam': tf.keras.optimizers.Adam,
+                'RandomFlip': tf.keras.layers.RandomFlip,
+                'RandomRotation': tf.keras.layers.RandomRotation,
+                'RandomZoom': tf.keras.layers.RandomZoom,
+                'RandomContrast': tf.keras.layers.RandomContrast,
+                'RandomBrightness': tf.keras.layers.RandomBrightness
+            }
+            
+            self.model = tf.keras.models.load_model(
+                model_path,
+                compile=False,
+                custom_objects=custom_objects
+            )
+            
+            # Verify model structure
+            self._validate_model()
+            
             logger.info(f"Successfully loaded model from {model_path}")
             logger.info(f"Model input shape: {self.model.input_shape}")
             
@@ -51,13 +68,14 @@ class PestDetector:
             self.class_names = np.load(class_names_path, allow_pickle=True).tolist()
             if not self.class_names:
                 raise ValueError("Class names file is empty")
-            logger.info(f"Loaded {len(self.class_names)} pest classes: {self.class_names}")
+            logger.info(f"Loaded {len(self.class_names)} pest classes")
             
-            # Verify model output matches class names
-            expected_output_shape = len(self.class_names)
-            actual_output_shape = self.model.output_shape[-1]
-            if expected_output_shape != actual_output_shape:
-                logger.warning(f"Mismatch: {expected_output_shape} classes but model outputs {actual_output_shape}")
+            # Verify output matches class names
+            if len(self.class_names) != self.model.output_shape[-1]:
+                logger.warning(
+                    f"Mismatch: {len(self.class_names)} classes but model outputs "
+                    f"{self.model.output_shape[-1]}"
+                )
             
             self.warm_up_model()
             
@@ -65,11 +83,27 @@ class PestDetector:
             logger.error(f"Initialization failed: {str(e)}")
             raise
 
+    def _validate_model(self):
+        """Validate loaded model structure"""
+        if not isinstance(self.model, tf.keras.Model):
+            raise ValueError("Loaded object is not a Keras model")
+        
+        if len(self.model.inputs) != 1:
+            raise ValueError("Model should have exactly one input")
+            
+        if self.model.input_shape[1:3] != self.input_size:
+            logger.warning(
+                f"Model expects input size {self.model.input_shape[1:3]} "
+                f"but detector is configured for {self.input_size}"
+            )
+        
+        if not isinstance(self.model.layers[-1], tf.keras.layers.Dense):
+            raise ValueError("Final layer is not Dense - unexpected model architecture")
+
     @classmethod
     def get_instance(cls, model_path: str = None, class_names_path: str = None):
         """Get singleton instance with optional custom paths"""
         if cls._instance is None or (model_path is not None or class_names_path is not None):
-            # Create new instance if paths are provided
             cls._instance = cls(
                 model_path or DEFAULT_MODEL_PATH,
                 class_names_path or DEFAULT_CLASS_NAMES_PATH
@@ -85,41 +119,48 @@ class PestDetector:
         except Exception as e:
             logger.warning(f"Model warmup failed: {str(e)}")
 
+    def validate_image(self, image: Image.Image) -> bool:
+        """Validate input image meets requirements"""
+        if not image:
+            return False
+        if min(image.size) < min(self.min_input_size):
+            return False
+        try:
+            image.verify()
+            return True
+        except Exception:
+            return False
+
     def preprocess_image(self, image: Image.Image) -> np.ndarray:
         """Preprocess image for model prediction"""
         try:
-            # Convert to RGB if needed
+            if not self.validate_image(image):
+                raise ValueError("Invalid image - failed validation")
+                
             if image.mode != 'RGB':
                 image = image.convert('RGB')
             
-            # Resize image
             img = image.resize(self.input_size, Image.Resampling.LANCZOS)
-            
-            # Convert to array and normalize
             img_array = tf.keras.preprocessing.image.img_to_array(img)
-            img_array = img_array / 255.0  # Normalize to [0,1] range
-            img_array = np.expand_dims(img_array, axis=0)
             
-            return img_array
+            # Note: No division by 255 here since model has Rescaling layer
+            return np.expand_dims(img_array, axis=0)
             
         except Exception as e:
             logger.error(f"Image preprocessing failed: {str(e)}")
-            raise
+            raise ValueError(f"Image preprocessing error: {str(e)}")
 
     def create_visualization(self, original_img: Image.Image,
                            pest_type: str, confidence: float,
                            top_predictions: List[Dict[str, Any]] = None) -> str:
         """Create visualization with prediction results"""
         try:
-            # Create figure with better layout
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
             
-            # Display original image
             ax1.imshow(original_img)
             ax1.set_title(f"Input Image", fontsize=12, fontweight='bold')
             ax1.axis('off')
             
-            # Create prediction results plot
             if top_predictions and len(top_predictions) > 1:
                 classes = [pred['pest_type'].replace('_', ' ').title() for pred in top_predictions[:5]]
                 confidences = [pred['confidence'] for pred in top_predictions[:5]]
@@ -133,21 +174,18 @@ class PestDetector:
                 ax2.set_title('Top Predictions', fontsize=12, fontweight='bold')
                 ax2.set_xlim(0, 100)
                 
-                # Add confidence values on bars
                 for i, (bar, conf) in enumerate(zip(bars, confidences)):
                     ax2.text(conf + 1, bar.get_y() + bar.get_height()/2, 
                             f'{conf:.1f}%', va='center', fontsize=10)
             else:
-                ax2.text(0.5, 0.5, f"Predicted: {pest_type.replace('_', ' ').title()}\nConfidence: {confidence:.1f}%",
+                ax2.text(0.5, 0.5, 
+                        f"Predicted: {pest_type.replace('_', ' ').title()}\nConfidence: {confidence:.1f}%",
                         ha='center', va='center', transform=ax2.transAxes,
                         fontsize=14, bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue"))
-                ax2.set_xlim(0, 1)
-                ax2.set_ylim(0, 1)
                 ax2.axis('off')
             
             plt.tight_layout()
             
-            # Convert to base64
             buf = BytesIO()
             plt.savefig(buf, format='png', bbox_inches='tight', dpi=150)
             plt.close()
@@ -165,30 +203,19 @@ class PestDetector:
             return {"status": "error", "error": "Class names not loaded"}
             
         try:
-            # Load and preprocess image
             image = Image.open(BytesIO(image_bytes))
             original_size = image.size
             img_array = self.preprocess_image(image)
             
-            # Make prediction
             predictions = self.model.predict(img_array, verbose=0)
             predicted_class_idx = np.argmax(predictions[0])
             confidence = float(np.max(predictions[0])) * 100
             pest_class = self.class_names[predicted_class_idx]
             
-            # Get top predictions
             top_preds = self.get_top_predictions(predictions[0])
-            
-            # Determine if pest is detected based on confidence and class
             pest_detected = self.is_pest_detected(pest_class, confidence)
-            
-            # Create visualization
             visualization = self.create_visualization(image, pest_class, confidence, top_preds)
-            
-            # Get recommendations
             recommendations = self.get_pest_recommendations(pest_class, confidence)
-            
-            # Calculate prediction reliability
             reliability = self.calculate_reliability(predictions[0])
             
             return {
@@ -211,7 +238,7 @@ class PestDetector:
             return {"status": "error", "error": str(e)}
 
     def analyze_pest_from_file(self, image_file) -> Dict[str, Any]:
-        """Analyze pest from uploaded file (Streamlit UploadedFile)"""
+        """Analyze pest from uploaded file"""
         try:
             return self.analyze_pest_from_bytes(image_file.read())
         except Exception as e:
@@ -221,31 +248,25 @@ class PestDetector:
     def is_pest_detected(self, pest_class: str, confidence: float) -> bool:
         """Determine if a pest is actually detected"""
         pest_lower = pest_class.lower()
-        
-        # Check for no-pest classes
         no_pest_indicators = ['no_pest', 'healthy', 'normal', 'clean']
+        
         if any(indicator in pest_lower for indicator in no_pest_indicators):
             return False
-        
-        # Check confidence threshold
         if confidence < self.confidence_threshold * 100:
             return False
-            
         return True
 
     def calculate_reliability(self, predictions: np.ndarray) -> str:
-        """Calculate prediction reliability based on confidence distribution"""
+        """Calculate prediction reliability"""
         max_conf = np.max(predictions)
         second_max_conf = np.partition(predictions, -2)[-2]
-        
         confidence_gap = max_conf - second_max_conf
         
         if max_conf > 0.8 and confidence_gap > 0.3:
             return "High"
         elif max_conf > 0.6 and confidence_gap > 0.2:
             return "Medium"
-        else:
-            return "Low"
+        return "Low"
 
     def get_top_predictions(self, predictions: np.ndarray, top_k: int = 5) -> List[Dict[str, Any]]:
         """Get top k predictions with confidence scores"""
@@ -257,17 +278,18 @@ class PestDetector:
             "pest_type": self.class_names[i],
             "confidence": float(predictions[i]) * 100,
             "class_index": int(i)
-        } for i in top_indices if predictions[i] > 0.01]  # Only show predictions > 1%
+        } for i in top_indices if predictions[i] > 0.01]
 
     def get_pest_recommendations(self, pest_type: str, confidence: float) -> List[str]:
-        """Get detailed recommendations based on pest type and confidence"""
+        """Get detailed recommendations"""
         pest_lower = pest_type.lower()
         recommendations = []
         
-        # Add confidence warning if low
         if confidence < 70:
-            recommendations.append("⚠️ Low confidence detection - consider getting a second opinion")
-            recommendations.append("")
+            recommendations.extend([
+                "⚠️ Low confidence detection - consider getting a second opinion",
+                ""
+            ])
         
         if not self.is_pest_detected(pest_type, confidence):
             recommendations.extend([
