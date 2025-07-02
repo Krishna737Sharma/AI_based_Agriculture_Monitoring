@@ -86,6 +86,7 @@ def download_models():
         "plant_disease_model.keras": "https://drive.google.com/uc?id=14Tt26X3R7Rdo0jyD6wmXHnhfaH2CCBgh",
         "pest_detection_best_model.keras": "https://drive.google.com/uc?id=1DT5bghUE3CpxoE3046dp24aXQ8sDUwyd",
         "nutrient_model.keras": "https://drive.google.com/uc?id=1OUTCmm2_RlqgB0v4lHMGI3aoixhoR0Pt",
+        "pest_detection_final_model.keras": "https://drive.google.com/uc?id=1OCXJmmmUlXQsjdWSVuVzFmM7TSKbn2UP"
     }
 
     for filename, url in model_urls.items():
