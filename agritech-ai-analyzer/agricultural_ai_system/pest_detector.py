@@ -68,14 +68,23 @@ class PestDetector:
                     logger.info("Attempting to rebuild model architecture...")
                     self.model = self._rebuild_model_architecture()
                     if self.model is None:
+                        # Try functional API approach as fallback
+                        logger.info("Trying functional API approach...")
+                        self.model = self._rebuild_model_functional()
+                    
+                    if self.model is None:
                         raise Exception("Could not rebuild model architecture")
                     
-                    # Load weights
-                    try:
-                        self.model.load_weights(model_path.replace('.keras', '_weights.h5'))
-                        logger.info("Successfully loaded weights into rebuilt model")
-                    except:
-                        logger.warning("Could not load separate weights file, using current model state")
+                    # Try to load weights if available
+                    weights_path = model_path.replace('.keras', '_weights.h5')
+                    if os.path.exists(weights_path):
+                        try:
+                            self.model.load_weights(weights_path)
+                            logger.info("Successfully loaded weights into rebuilt model")
+                        except Exception as weights_error:
+                            logger.warning(f"Could not load weights file: {weights_error}")
+                    else:
+                        logger.warning("No separate weights file found, using initialized model")
             
             logger.info(f"Model input shape: {self.model.input_shape}")
             logger.info(f"Model output shape: {self.model.output_shape}")
@@ -93,17 +102,60 @@ class PestDetector:
                 logger.warning(f"Mismatch: {expected_output_shape} classes but model outputs {actual_output_shape}")
             
             # Recompile the model to ensure proper functionality
-            self.model.compile(
-                optimizer='adam',
-                loss='sparse_categorical_crossentropy',
-                metrics=['accuracy']
-            )
+            if self.model is not None:
+                try:
+                    self.model.compile(
+                        optimizer='adam',
+                        loss='sparse_categorical_crossentropy',
+                        metrics=['accuracy']
+                    )
+                    logger.info("Model compiled successfully")
+                except Exception as compile_error:
+                    logger.warning(f"Model compilation failed: {compile_error}")
             
             self.warm_up_model()
             
         except Exception as e:
             logger.error(f"Initialization failed: {str(e)}")
             raise
+
+    def _rebuild_model_functional(self):
+        """Rebuild model using Functional API as alternative approach"""
+        try:
+            # Define input
+            inputs = tf.keras.Input(shape=(224, 224, 3))
+            
+            # Rescaling layer
+            x = tf.keras.layers.Rescaling(1./255)(inputs)
+            
+            # Base model
+            base_model = tf.keras.applications.MobileNetV2(
+                input_shape=(224, 224, 3),
+                include_top=False,
+                weights='imagenet'
+            )
+            base_model.trainable = False
+            
+            x = base_model(x, training=False)
+            
+            # Classification head
+            x = tf.keras.layers.GlobalAveragePooling2D()(x)
+            x = tf.keras.layers.Dropout(0.2)(x)
+            x = tf.keras.layers.Dense(128, activation='relu')(x)
+            x = tf.keras.layers.BatchNormalization()(x)
+            x = tf.keras.layers.Dropout(0.2)(x)
+            outputs = tf.keras.layers.Dense(9, activation='softmax')(x)
+            
+            model = tf.keras.Model(inputs, outputs)
+            
+            logger.info("Successfully rebuilt model using Functional API")
+            logger.info(f"Model input shape: {model.input_shape}")
+            logger.info(f"Model output shape: {model.output_shape}")
+            return model
+            
+        except Exception as e:
+            logger.error(f"Failed to rebuild model using Functional API: {e}")
+            return None
 
     def _rebuild_model_architecture(self):
         """Rebuild the model architecture based on the training logs"""
@@ -127,7 +179,16 @@ class PestDetector:
                 tf.keras.layers.Dense(9, activation='softmax')  # 9 classes as per your training
             ])
             
+            # Build the model by calling it with a dummy input
+            dummy_input = tf.keras.Input(shape=(224, 224, 3))
+            model(dummy_input)
+            
+            # Alternative: use build method
+            model.build((None, 224, 224, 3))
+            
             logger.info("Successfully rebuilt model architecture")
+            logger.info(f"Model input shape: {model.input_shape}")
+            logger.info(f"Model output shape: {model.output_shape}")
             return model
             
         except Exception as e:
@@ -147,12 +208,31 @@ class PestDetector:
 
     def warm_up_model(self) -> None:
         """Warm up the model with a dummy prediction"""
+        if self.model is None:
+            logger.warning("Cannot warm up model - model is None")
+            return
+            
         try:
-            dummy_input = np.zeros((1, *self.input_size, 3), dtype=np.float32)
-            _ = self.model.predict(dummy_input, verbose=0)
-            logger.info("Model warmed up successfully")
+            # Check if model has input shape defined
+            if hasattr(self.model, 'input_shape') and self.model.input_shape:
+                dummy_input = np.random.random((1, *self.input_size, 3)).astype(np.float32)
+                _ = self.model.predict(dummy_input, verbose=0)
+                logger.info("Model warmed up successfully")
+            else:
+                logger.warning("Model input shape not defined, skipping warmup")
         except Exception as e:
             logger.warning(f"Model warmup failed: {str(e)}")
+            # Try to build the model if warmup fails
+            try:
+                if hasattr(self.model, 'build'):
+                    self.model.build((None, *self.input_size, 3))
+                    logger.info("Model built successfully after warmup failure")
+                    # Retry warmup
+                    dummy_input = np.random.random((1, *self.input_size, 3)).astype(np.float32)
+                    _ = self.model.predict(dummy_input, verbose=0)
+                    logger.info("Model warmed up successfully after building")
+            except Exception as build_error:
+                logger.warning(f"Model build and warmup retry failed: {build_error}")
 
     def preprocess_image(self, image: Image.Image) -> np.ndarray:
         """Preprocess image for model prediction"""
