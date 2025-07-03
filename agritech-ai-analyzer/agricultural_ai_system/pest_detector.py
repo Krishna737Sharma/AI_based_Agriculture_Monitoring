@@ -372,7 +372,7 @@ class PestDetector:
             "confidence": float(predictions[i]) * 100,
             "class_index": int(i)
         } for i in top_indices if predictions[i] > 0.01]  # Only show predictions > 1%
-
+    
     def get_pest_recommendations(self, pest_type: str, confidence: float) -> List[str]:
         """Get detailed recommendations based on pest type and confidence"""
         pest_lower = pest_type.lower()
@@ -383,7 +383,8 @@ class PestDetector:
             recommendations.append("⚠️ Low confidence detection - consider getting a second opinion")
             recommendations.append("")
         
-        if not self.is_pest_detected(confidence):
+        # Fixed: Pass empty list as second parameter
+        if not self.is_pest_detected(confidence, []):
             recommendations.extend([
                 "✅ No significant pest detected",
                 "",
