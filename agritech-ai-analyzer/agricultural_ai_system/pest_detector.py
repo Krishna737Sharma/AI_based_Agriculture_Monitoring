@@ -332,12 +332,19 @@ class PestDetector:
             logger.error(f"File analysis failed: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def is_pest_detected(self,confidence: float,top_pred) -> bool:
-        # Check confidence threshold (30% in your case)
-        if top_pred[0]< self.confidence_threshold * 100:
-            return False
+    def is_pest_detected(self, confidence: float, top_pred: List[Dict[str, Any]]) -> bool:
+            """Check if a pest is detected based on confidence and predictions"""
+            # Check confidence threshold (10% minimum as defined in __init__)
+            if confidence < self.confidence_threshold * 100:
+                return False
+                
+            # Additional check: ensure the top prediction is confident enough
+            if top_pred and len(top_pred) > 0:
+                # Check if top prediction confidence is above threshold
+                if top_pred[0]['confidence'] < self.confidence_threshold * 100:
+                    return False
             
-        return True
+            return True
 
     def calculate_reliability(self, predictions: np.ndarray) -> str:
         """Calculate prediction reliability based on confidence distribution"""
