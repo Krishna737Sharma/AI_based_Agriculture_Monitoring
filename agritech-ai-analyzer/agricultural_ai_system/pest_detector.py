@@ -26,7 +26,7 @@ class PestDetector:
         self.model = None
         self.class_names = []
         self.input_size = (224, 224)
-        self.confidence_threshold = 0.1  # Minimum confidence for reliable detection
+        self.confidence_threshold = 0.5  # Minimum confidence for reliable detection
         
         try:
             # Check if files exist
@@ -272,58 +272,57 @@ class PestDetector:
             return ""
 
     def analyze_pest_from_bytes(self, image_bytes: bytes) -> Dict[str, Any]:
-            """Analyze pest from image bytes"""
-            if not self.model:
-                return {"status": "error", "error": "Model not loaded"}
-            if not self.class_names:
-                return {"status": "error", "error": "Class names not loaded"}
-                
-            try:
-                # Load and preprocess image
-                image = Image.open(BytesIO(image_bytes))
-                original_size = image.size
-                img_array = self.preprocess_image(image)
-                
-                # Make prediction
-                predictions = self.model.predict(img_array, verbose=0)
-                predicted_class_idx = np.argmax(predictions[0])
-                confidence = float(np.max(predictions[0])) * 100
-                pest_class = self.class_names[predicted_class_idx]
-                
-                # Get top predictions
-                top_preds = self.get_top_predictions(predictions[0])
-                
-                # Determine if pest is detected based on confidence and class
-                # Fixed: Pass both required parameters
-                pest_detected = self.is_pest_detected(confidence, top_preds)
-                
-                # Create visualization
-                visualization = self.create_visualization(image, pest_class, confidence, top_preds)
-                
-                # Get recommendations
-                recommendations = self.get_pest_recommendations(pest_class, confidence)
-                
-                # Calculate prediction reliability
-                reliability = self.calculate_reliability(predictions[0])
-                
-                return {
-                    "status": "success",
-                    "pest_detected": pest_detected,
-                    "pest_type": pest_class,
-                    "confidence": confidence,
-                    "reliability": reliability,
-                    "top_predictions": top_preds,
-                    "recommendations": recommendations,
-                    "image_info": {
-                        "original_size": original_size,
-                        "processed_size": self.input_size
-                    },
-                    "visualization": f"data:image/png;base64,{visualization}" if visualization else None
-                }
-                
-            except Exception as e:
-                logger.error(f"Pest detection failed: {str(e)}")
-                return {"status": "error", "error": str(e)}
+        """Analyze pest from image bytes"""
+        if not self.model:
+            return {"status": "error", "error": "Model not loaded"}
+        if not self.class_names:
+            return {"status": "error", "error": "Class names not loaded"}
+            
+        try:
+            # Load and preprocess image
+            image = Image.open(BytesIO(image_bytes))
+            original_size = image.size
+            img_array = self.preprocess_image(image)
+            
+            # Make prediction
+            predictions = self.model.predict(img_array, verbose=0)
+            predicted_class_idx = np.argmax(predictions[0])
+            confidence = float(np.max(predictions[0])) * 100
+            pest_class = self.class_names[predicted_class_idx]
+            
+            # Get top predictions
+            top_preds = self.get_top_predictions(predictions[0])
+            
+            # Determine if pest is detected based on confidence and class
+            pest_detected = self.is_pest_detected(pest_class, confidence)
+            
+            # Create visualization
+            visualization = self.create_visualization(image, pest_class, confidence, top_preds)
+            
+            # Get recommendations
+            recommendations = self.get_pest_recommendations(pest_class, confidence)
+            
+            # Calculate prediction reliability
+            reliability = self.calculate_reliability(predictions[0])
+            
+            return {
+                "status": "success",
+                "pest_detected": pest_detected,
+                "pest_type": pest_class,
+                "confidence": confidence,
+                "reliability": reliability,
+                "top_predictions": top_preds,
+                "recommendations": recommendations,
+                "image_info": {
+                    "original_size": original_size,
+                    "processed_size": self.input_size
+                },
+                "visualization": f"data:image/png;base64,{visualization}" if visualization else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Pest detection failed: {str(e)}")
+            return {"status": "error", "error": str(e)}
 
     def analyze_pest_from_file(self, image_file) -> Dict[str, Any]:
         """Analyze pest from uploaded file (Streamlit UploadedFile)"""
@@ -333,19 +332,20 @@ class PestDetector:
             logger.error(f"File analysis failed: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def is_pest_detected(self, confidence: float, top_pred: List[Dict[str, Any]]) -> bool:
-            """Check if a pest is detected based on confidence and predictions"""
-            # Check confidence threshold (10% minimum as defined in __init__)
-            if confidence < self.confidence_threshold * 100:
-                return False
-                
-            # Additional check: ensure the top prediction is confident enough
-            if top_pred and len(top_pred) > 0:
-                # Check if top prediction confidence is above threshold
-                if top_pred[0]['confidence'] < self.confidence_threshold * 100:
-                    return False
+    def is_pest_detected(self, pest_class: str, confidence: float) -> bool:
+        """Determine if a pest is actually detected"""
+        pest_lower = pest_class.lower()
+        
+        # Check for no-pest classes
+        no_pest_indicators = ['no_pest', 'healthy', 'normal', 'clean']
+        if any(indicator in pest_lower for indicator in no_pest_indicators):
+            return False
+        
+        # Check confidence threshold
+        if confidence < self.confidence_threshold * 100:
+            return False
             
-            return True
+        return True
 
     def calculate_reliability(self, predictions: np.ndarray) -> str:
         """Calculate prediction reliability based on confidence distribution"""
@@ -372,7 +372,7 @@ class PestDetector:
             "confidence": float(predictions[i]) * 100,
             "class_index": int(i)
         } for i in top_indices if predictions[i] > 0.01]  # Only show predictions > 1%
-    
+
     def get_pest_recommendations(self, pest_type: str, confidence: float) -> List[str]:
         """Get detailed recommendations based on pest type and confidence"""
         pest_lower = pest_type.lower()
@@ -383,8 +383,7 @@ class PestDetector:
             recommendations.append("⚠️ Low confidence detection - consider getting a second opinion")
             recommendations.append("")
         
-        # Fixed: Pass empty list as second parameter
-        if not self.is_pest_detected(confidence, []):
+        if not self.is_pest_detected(pest_type, confidence):
             recommendations.extend([
                 "✅ No significant pest detected",
                 "",
