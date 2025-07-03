@@ -272,57 +272,58 @@ class PestDetector:
             return ""
 
     def analyze_pest_from_bytes(self, image_bytes: bytes) -> Dict[str, Any]:
-        """Analyze pest from image bytes"""
-        if not self.model:
-            return {"status": "error", "error": "Model not loaded"}
-        if not self.class_names:
-            return {"status": "error", "error": "Class names not loaded"}
-            
-        try:
-            # Load and preprocess image
-            image = Image.open(BytesIO(image_bytes))
-            original_size = image.size
-            img_array = self.preprocess_image(image)
-            
-            # Make prediction
-            predictions = self.model.predict(img_array, verbose=0)
-            predicted_class_idx = np.argmax(predictions[0])
-            confidence = float(np.max(predictions[0])) * 100
-            pest_class = self.class_names[predicted_class_idx]
-            
-            # Get top predictions
-            top_preds = self.get_top_predictions(predictions[0])
-            
-            # Determine if pest is detected based on confidence and class
-            pest_detected = self.is_pest_detected(confidence,top_preds)
-            
-            # Create visualization
-            visualization = self.create_visualization(image, pest_class, confidence, top_preds)
-            
-            # Get recommendations
-            recommendations = self.get_pest_recommendations(pest_class, confidence)
-            
-            # Calculate prediction reliability
-            reliability = self.calculate_reliability(predictions[0])
-            
-            return {
-                "status": "success",
-                "pest_detected": pest_detected,
-                "pest_type": pest_class,
-                "confidence": confidence,
-                "reliability": reliability,
-                "top_predictions": top_preds,
-                "recommendations": recommendations,
-                "image_info": {
-                    "original_size": original_size,
-                    "processed_size": self.input_size
-                },
-                "visualization": f"data:image/png;base64,{visualization}" if visualization else None
-            }
-            
-        except Exception as e:
-            logger.error(f"Pest detection failed: {str(e)}")
-            return {"status": "error", "error": str(e)}
+            """Analyze pest from image bytes"""
+            if not self.model:
+                return {"status": "error", "error": "Model not loaded"}
+            if not self.class_names:
+                return {"status": "error", "error": "Class names not loaded"}
+                
+            try:
+                # Load and preprocess image
+                image = Image.open(BytesIO(image_bytes))
+                original_size = image.size
+                img_array = self.preprocess_image(image)
+                
+                # Make prediction
+                predictions = self.model.predict(img_array, verbose=0)
+                predicted_class_idx = np.argmax(predictions[0])
+                confidence = float(np.max(predictions[0])) * 100
+                pest_class = self.class_names[predicted_class_idx]
+                
+                # Get top predictions
+                top_preds = self.get_top_predictions(predictions[0])
+                
+                # Determine if pest is detected based on confidence and class
+                # Fixed: Pass both required parameters
+                pest_detected = self.is_pest_detected(confidence, top_preds)
+                
+                # Create visualization
+                visualization = self.create_visualization(image, pest_class, confidence, top_preds)
+                
+                # Get recommendations
+                recommendations = self.get_pest_recommendations(pest_class, confidence)
+                
+                # Calculate prediction reliability
+                reliability = self.calculate_reliability(predictions[0])
+                
+                return {
+                    "status": "success",
+                    "pest_detected": pest_detected,
+                    "pest_type": pest_class,
+                    "confidence": confidence,
+                    "reliability": reliability,
+                    "top_predictions": top_preds,
+                    "recommendations": recommendations,
+                    "image_info": {
+                        "original_size": original_size,
+                        "processed_size": self.input_size
+                    },
+                    "visualization": f"data:image/png;base64,{visualization}" if visualization else None
+                }
+                
+            except Exception as e:
+                logger.error(f"Pest detection failed: {str(e)}")
+                return {"status": "error", "error": str(e)}
 
     def analyze_pest_from_file(self, image_file) -> Dict[str, Any]:
         """Analyze pest from uploaded file (Streamlit UploadedFile)"""
